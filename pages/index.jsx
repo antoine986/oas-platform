@@ -71,19 +71,27 @@ const MODULES = [
   {
     id:4, num:"04", name:"Sourcing & enrichissement", tag:"Data Ops", dur:"2h30", color:"#D97706", colorLight:"#FFFBEB",
     title:"Sourcing & enrichissement maîtrisés",
-    intro:"Sourcer des entreprises et des contacts de façon propre, conditionnelle et sans aucun gaspillage de crédits Clay.",
-    objectives:["Sourcer des entreprises depuis 5 sources différentes","Enrichir uniquement les entreprises validées","Configurer une cascade email intelligente (waterfall)","Valider les emails avant tout export"],
+    intro:"Sourcer les bonnes entreprises, trouver les bons contacts, enrichir uniquement ce qui est qualifié. Chaque étape non conditionnée te coûte des crédits inutilement.",
+    objectives:[
+      "Sourcer des entreprises depuis 4 sources différentes (Clay natif, CSV, Sales Nav, Apollo)",
+      "Comprendre quand utiliser Clay vs Apollo vs Sales Navigator pour le sourcing",
+      "Configurer Find People avec les bons filtres et limites par entreprise",
+      "Mettre en place une cascade email waterfall avec Full Enrich + Dropcontact + Enrichley",
+      "Conditionner chaque enrichissement avec un Run if pour ne jamais dépenser de crédits inutilement"
+    ],
     rules:[
-      {n:"01", r:"Aucun contact n'est sourcé si l'entreprise n'est pas validée."},
-      {n:"02", r:"Déduplication AVANT enrichissement — toujours."},
-      {n:"03", r:"La cascade email s'arrête dès qu'un email valide est trouvé."}
+      {n:"01", r:"Aucun contact n'est sourcé si l'entreprise n'a pas passé le filtre TAM + Blocklist. Find People ne se lance que depuis la table intermédiaire Approved Companies."},
+      {n:"02", r:"Toujours Save and Run sur 5 à 10 lignes avant de lancer sur toute la base. Un prompt mal configuré sur 5000 lignes à 3 crédits = 15 000 crédits perdus."},
+      {n:"03", r:"La cascade email s'arrête dès qu'un email valide est trouvé. Si Full Enrich trouve un email valide, Dropcontact ne tourne pas. C'est ça le waterfall."}
     ],
     concepts:[
-      {t:"Sourcing entreprise — sources possibles",b:"Clay native source (Find Companies) · Google Sheet dynamique · Import CSV · Lien Sales Navigator. Règle critique : laisser la source en Manual — jamais d'auto-update avant validation du workflow complet."},
-      {t:"Enrichissement entreprise — strict minimum",b:"À ce stade : Industry, Domain, LinkedIn Company URL, Employee Range, Country/City, Short Description. Pas d'enrichissement 'nice to have'. Coût = 0 si l'entreprise n'est pas qualifiée après."},
-      {t:"Cascade email intelligente",b:"Waterfall sequence : providers dans l'ordre (ex : Enrow → FullEnrich). Stop dès qu'un email valide est trouvé. Activer Validation Provider + Require validation success = ON pour ne garder que les emails sûrs."}
+      {t:"Clay vs Apollo vs Sales Navigator — quand utiliser quoi",b:"Clay natif (Find Companies) : data à jour, moins de volume. Bon pour la qualité quand l'ICP est précis. Apollo : plus de volume, data parfois moins à jour. Utile quand Clay ne génère pas assez de résultats. Workflow combiné recommandé : sourcer sur Apollo ou Sales Nav → exporter en CSV → importer dans Clay pour tout le reste (qualification, enrichissement, agents IA). Sales Nav : copier-coller l'URL de recherche directement dans Clay (Find Companies → Company Identifiers). Tu gardes les filtres Sales Nav sans quitter Clay."},
+      {t:"Find People — configuration et limites",b:"Add Action → Find People (version gratuite, pas la payante). Filtres clés : Job Title avec 'similar to' pour le volume ou 'is exactly' pour la précision — 'is exactly CEO' te donne moins de résultats mais zéro déchet. Seniority, Department, Location si nécessaire. 'Maximum months in current role' : signal recrutement récent (ex : CFO en poste depuis moins de 6 mois). Limite obligatoire : 5 contacts max par entreprise pour éviter le volume inutile. Toujours lier contact ↔ entreprise. Run if : Lead Status = Approved."},
+      {t:"Normaliser les noms et nettoyer les job titles",b:"Après Find People, normaliser les prénoms et noms : Add Enrichment → Normalize Company Name → cocher NormalizeCase → gratuit. Pour filtrer les job titles non pertinents : Add Column → Formula → checker si job title contient un mot à exclure (ex: 'exploitation', 'intern', 'stagiaire'). Créer une colonne booléenne 'Exclude' = true si job title non pertinent. Utiliser cette colonne en Run condition pour ne pas enrichir ces contacts."},
+      {t:"Cascade email waterfall — configuration exacte",b:"Add Enrichment → Find Work Email → Full Configuration → Waterfall Sequence. Ordre recommandé : 1) Full Enrich (meilleure couverture) → 2) Dropcontact (fallback). Validation Provider : Enrichley → activer 'Require validation success' → activer 'Hide provider columns' pour garder la table propre. Run if : Good Fit is 'Approved' ET le contact n'est pas exclu. La cascade s'arrête dès qu'un email valide est trouvé — tu ne paies que pour les résultats."},
+      {t:"Préqualification IA — avant d'enrichir, pas après",b:"L'agent IA de qualification se lance sur les entreprises Approved, avant Find People. Add Action → Use AI → configurer le prompt. Inputs recommandés : Company Name, Website, Industry, Description, Employee Range, Country. Output attendu : une colonne 'Company Status' (Qualified / Not Qualified) et une colonne 'Reasoning'. Format JSON obligatoire pour utiliser les résultats en Run condition. Run if : Good Fit is 'Approved'. Tester sur 5-10 lignes avec un modèle à 1-2 crédits avant de lancer sur toute la base."}
     ],
-    qq:["Meilleurs providers email ?","Limiter à 3 contacts/entreprise ?","Run if pour l'enrichissement ?"]
+    qq:["Comment importer un lien Sales Nav dans Clay ?","Pourquoi limiter à 5 contacts par entreprise ?","Comment configurer la cascade email ?"]
   },
   {
     id:5, num:"05", name:"Copy & séquences multicanales", tag:"Messaging", dur:"2h", color:"#BE185D", colorLight:"#FDF2F8",
