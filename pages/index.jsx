@@ -56,7 +56,8 @@ const MODULES = [
     concepts:[
       {t:"La TAM Table — mini-CRM de prospection",b:"Centralise toutes les entreprises sourcées. Évite toute reprospection accidentelle. Suivi de statut : Prospect → Contacté → En cours → Client → Closed Lost. Champs min : Company Name, Website, Domain normalisé, LinkedIn URL."},
       {t:"La Blocklist — protection systémique",b:"Sources : CRM client, anciens prospects, comptes sensibles, clients actifs. Domaine normalisé obligatoire (sans www., /fr /en). Action Clay : Lookup Single Row → Blocklist avant tout enrichissement."},
-      {t:"La table intermédiaire Approved Companies",b:"Créée via Send data to table avec Run condition : Company Status = 'Qualified'. Seule entrée autorisée pour enrichissement, sourcing contact et automatisations downstream. Protège tes crédits Clay."}
+      {t:"La table intermédiaire Approved Companies",b:"Créée via Send data to table avec Run condition : Company Status = 'Qualified'. Seule entrée autorisée pour enrichissement, sourcing contact et automatisations downstream. Protège tes crédits Clay."},
+      {t:"Normalize Domain — action native Clay",b:"Dans Clay, utilise l'enrichissement natif 'Normalize Domain' dans la section Actions. Il nettoie automatiquement les domaines : supprime www., les sous-domaines et les suffixes /fr /en. C'est l'action recommandée avant tout lookup TAM ou Blocklist."}
     ],
     qq:["Comment normaliser un domaine ?","Lookup Single Row ?","TAM par client ?"]
   },
