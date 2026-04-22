@@ -96,19 +96,27 @@ const MODULES = [
   {
     id:5, num:"05", name:"Copy & séquences multicanales", tag:"Messaging", dur:"2h", color:"#BE185D", colorLight:"#FDF2F8",
     title:"Copy outbound & séquences multicanales",
-    intro:"Écrire des messages qui ouvrent des conversations — pas qui vendent. Structure, icebreakers, et séquences multicanales.",
-    objectives:["Maîtriser la structure Observation → Supposition → Question","Écrire des icebreakers basés sur des signaux réels","Construire une séquence email + LinkedIn cohérente","Utiliser Clay pour personnaliser à l'échelle sans inventer"],
+    intro:"Un bon message outbound ne vend pas. Il ouvre une conversation. La personnalisation utile repose sur un signal réel — pas sur le prénom ou le logo de l'entreprise.",
+    objectives:[
+      "Distinguer personnalisation utile (basée sur un signal) et personnalisation cosmétique (prénom, logo, poste)",
+      "Construire un icebreaker adapté à son secteur, son persona et son canal",
+      "Configurer un agent IA dans Clay pour générer des icebreakers à l'échelle",
+      "Structurer une séquence LinkedIn et/ou email cohérente et non répétitive",
+      "Tester et itérer sur ses prompts avant de lancer sur toute la base"
+    ],
     rules:[
-      {n:"01", r:"Structure obligatoire : Observation → Supposition → Question."},
-      {n:"02", r:"Jamais de chiffres inventés, jamais de flatterie, jamais de vente au premier contact."},
-      {n:"03", r:"L'icebreaker ne s'utilise que quand tu as un signal exploitable réel."}
+      {n:"01", r:"L'icebreaker ne s'utilise que si tu as un signal exploitable réel. Sans signal, tu te bases sur un enjeu sectoriel universel. Tu n'inventes jamais d'information."},
+      {n:"02", r:"L'agent IA ne génère des icebreakers que sur les entreprises qualifiées et approuvées. Run if : Good Fit is 'Approved'. Jamais sur toute la base d'un coup."},
+      {n:"03", r:"Toujours tester le prompt sur 5 à 10 lignes et faire valider le ton par le client avant de lancer. Un prompt mal calibré sur 1000 lignes à 3 crédits = 3000 crédits perdus."}
     ],
     concepts:[
-      {t:"La structure qui fonctionne",b:"Commence par une observation naturelle. Formule une supposition prudente ('je me demandais si...', 'j'imagine que...'). Termine par une question ouverte courte. Maximum 2 phrases. Ton professionnel et naturel. Aucun emoji."},
-      {t:"Personnalisation utile vs cosmétique",b:"Cosmétique : mentionner le prénom, le logo, le poste. Utile : mentionner un signal réel (recrutement, expansion, changement de tech). La personnalisation utile augmente les taux de réponse. La cosmétique ne fait que donner bonne conscience."},
-      {t:"Séquences multicanales : ordre recommandé",b:"LinkedIn connexion → Email J0 → Relance valeur J3 → Breakup J7. Même angle, même ton, pas de répétition entre canaux. La cohérence cross-canal crée la familiarité sans être intrusif."}
+      {t:"Personnalisation utile vs personnalisation cosmétique",b:"Cosmétique : mentionner le prénom, le logo, le poste, le secteur générique. Ça ne génère pas d'attention. Utile : mentionner un signal réel et récent — recrutement actif, expansion géographique, levée de fonds, changement de leadership. La personnalisation utile montre que tu as fait des recherches sur cette entreprise spécifiquement. C'est ça qui génère des réponses. Plus le signal est précis et récent, plus l'icebreaker est percutant."},
+      {t:"La structure fondamentale d'un bon message outbound",b:"Trois temps : 1) Observation — ce que tu as constaté sur l'entreprise ou le contexte du persona. 2) Supposition prudente — jamais une affirmation risquée. Utiliser 'j'imagine que...', 'je me demandais si...', 'cela doit parfois...'. 3) Question ouverte — courte, qui invite à répondre sans pression. Cette structure s'applique à LinkedIn comme à l'email. Ce qui change selon le canal : la longueur (2 phrases max sur LinkedIn, 3-4 sur email) et le ton (plus conversationnel sur LinkedIn)."},
+      {t:"Configurer l'agent IA icebreaker dans Clay",b:"Add Action → Use AI → rédiger le prompt en anglais ou français (Clay gère les deux). Donner le maximum de contexte : qui est le client, son activité, ses enjeux, le persona ciblé. Définir la structure obligatoire (comment commencer, comment formuler la supposition, quel CTA). Préciser le formatage : une phrase par paragraphe, ligne vide entre chaque, pas d'emoji, pas de chiffres inventés. Clay réécrit le prompt automatiquement — lire la version réécrite avant de lancer. Tester sur 5-10 lignes, ajuster, retester. Le choix du modèle IA impacte le résultat : tester plusieurs modèles sur le même échantillon pour choisir celui qui sonne le plus naturel pour ce secteur spécifique."},
+      {t:"Signaux exploitables et comment les sourcer dans Clay",b:"Recrutement récent : Find People → filtre 'Maximum months in current role'. Signal fort pour les nouveaux décideurs. Croissance/expansion : agent IA avec prompt de détection (ex : 'identify if company opened new locations or showed growth signals in 2025, return score 1-4'). Levée de fonds : enrichissement natif Clay 'Funding Signal'. Scraping de posts LinkedIn : intégration Phantom Buster 'Scrape LinkedIn Post' → importer dans Clay. Actualités sectorielles : agent IA avec scraping web du domaine entreprise. Sans signal disponible : icebreaker basé sur un enjeu universel lié au poste et au secteur — jamais d'information inventée."},
+      {t:"Séquences multicanales — logique et structure",b:"LinkedIn en premier : envoi de connexion sans message (ne jamais mettre de message dans la demande de connexion — ça grille la relation). Après acceptation : message conversationnel avec icebreaker. Email en parallèle ou en suite : séquence 3 à 5 emails selon la cible. Espacements recommandés : J0, J3, J7, J14. Cohérence obligatoire entre canaux : même angle, même ton, pas de répétition du contenu. Sur LinkedIn : limite 30 invitations par jour — choisir les cibles avec soin. Sur email : sous-domaines dédiés à la prospection pour protéger le domaine principal, warm-up obligatoire. Lemlist et Smartlead permettent les deux canaux depuis une même interface."}
     ],
-    qq:["Prompt icebreaker générique ?","Combien de relances ?","LinkedIn vs email en FR ?"]
+    qq:["Comment rédiger un prompt icebreaker efficace ?","Quel modèle IA choisir pour les icebreakers ?","Comment structurer une séquence LinkedIn + email ?"]
   },
   {
     id:6, num:"06", name:"Déploiement & mise en production", tag:"Ops", dur:"2h", color:"#059669", colorLight:"#ECFDF5",
