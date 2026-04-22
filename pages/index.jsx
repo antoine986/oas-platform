@@ -46,20 +46,27 @@ const MODULES = [
   {
     id:3, num:"03", name:"Tables Clay & architecture data", tag:"Structure", dur:"2h", color:"#0891B2", colorLight:"#ECFEFF",
     title:"Architecture des tables Clay",
-    intro:"Maîtriser la structure de données fondamentale sur laquelle tout repose — TAM, Blocklist, tables intermédiaires.",
-    objectives:["Construire et gérer une TAM Table persistante","Configurer une blocklist globale et permanente","Créer des tables intermédiaires pour isoler les entreprises qualifiées","Normaliser les domaines pour éviter les doublons"],
+    intro:"La base de ta machine. Si l'architecture n'est pas propre au départ, tout le reste sera fragile. Cette étape est la moins fun mais la plus critique.",
+    objectives:[
+      "Comprendre pourquoi on travaille avec des workbooks séparés pour la TAM, la Blocklist et le sourcing",
+      "Créer et configurer une TAM Table persistante avec domaines normalisés",
+      "Configurer une Blocklist globale depuis ton CRM HubSpot",
+      "Construire une table intermédiaire pour isoler les entreprises qualifiées",
+      "Maîtriser la logique Lookup Single Row pour dédupliquer avant d'enrichir"
+    ],
     rules:[
-      {n:"01", r:"La TAM Table est permanente. Une entreprise entre une seule fois, n'est jamais supprimée."},
-      {n:"02", r:"La blocklist est globale et non négociable."},
-      {n:"03", r:"Aucun contact ne sort sans Is Outreach Ready = TRUE."}
+      {n:"01", r:"TAM et Blocklist vivent dans un workbook séparé. On ne source et n'enrichit JAMAIS depuis ce workbook."},
+      {n:"02", r:"Le domaine normalisé est la clé d'identification de toute entreprise dans Clay. Sans normalisation, les lookups ne matchent pas."},
+      {n:"03", r:"Aucune entreprise n'est enrichie sans avoir été vérifiée contre la TAM et la Blocklist. Sinon tu dépenses des crédits pour rien."}
     ],
     concepts:[
-      {t:"La TAM Table — mini-CRM de prospection",b:"Centralise toutes les entreprises sourcées. Évite toute reprospection accidentelle. Suivi de statut : Prospect → Contacté → En cours → Client → Closed Lost. Champs min : Company Name, Website, Domain normalisé, LinkedIn URL."},
-      {t:"La Blocklist — protection systémique",b:"Sources : CRM client, anciens prospects, comptes sensibles, clients actifs. Domaine normalisé obligatoire (sans www., /fr /en). Action Clay : Lookup Single Row → Blocklist avant tout enrichissement."},
-      {t:"La table intermédiaire Approved Companies",b:"Créée via Send data to table avec Run condition : Company Status = 'Qualified'. Seule entrée autorisée pour enrichissement, sourcing contact et automatisations downstream. Protège tes crédits Clay."},
-      {t:"Normalize Domain — action native Clay",b:"Dans Clay, utilise l'enrichissement natif 'Normalize Domain' dans la section Actions. Il nettoie automatiquement les domaines : supprime www., les sous-domaines et les suffixes /fr /en. C'est l'action recommandée avant tout lookup TAM ou Blocklist."}
+      {t:"La TAM Table — ce que c'est vraiment",b:"La TAM (Total Addressable Market) n'est PAS ton marché adressable global. C'est la table qui centralise toutes les entreprises sur lesquelles tu as DÉJÀ travaillé — sourcées, enrichies, prospectées. Elle fait office de mini-CRM dédié à la prospection. Une entreprise entre une seule fois, n'est jamais supprimée, et son statut évolue (Prospect → Contacté → En cours → Client → Closed Lost). Si tu travailles sur plusieurs personas par entreprise (logique ABM), crée une TAM Company ET une TAM People."},
+      {t:"La Blocklist — protection systémique",b:"La Blocklist contient les entreprises à ne jamais toucher : clients existants, anciens prospects sensibles, comptes en cours de négociation. Source : export HubSpot filtré sur 'First Deal Created Date is Known'. Action Clay : normaliser le domaine (Normalize Domain → Remove Prefixes), puis renommer la table Blocklist_[NomClient]. Champs minimum : Company Name, Website, Domain normalisé. À mettre à jour régulièrement — un export HubSpot d'il y a 2 mois ne couvre pas les nouveaux clients."},
+      {t:"Normalize Domain — l'action native Clay",b:"Dans Clay : Add Enrichment → chercher 'Normalize Domain' → sélectionner la colonne website → Normalization Type : Remove Prefixes. Ça enlève automatiquement www., https://, http://. IMPORTANT : garder les suffixes .com/.fr/.io — ils sont nécessaires pour matcher avec ce qui est dans ton CRM. Sans normalisation, 'www.example.com' ne matche pas avec 'example.com' lors du Lookup."},
+      {t:"Lookup TAM + Blocklist — la déduplication obligatoire",b:"Add Action → Lookup Single Row in Other Table → sélectionner Blocklist → clé : Company Domain = [ta colonne domaine normalisé]. Faire pareil pour la TAM. Ensuite créer une colonne 'Good Fit' avec la formule : return 'Approved' if [Dedup Blocklist] has found no record AND [Lookup TAM] has found no record. Cette colonne synthétise les deux lookups en une seule condition réutilisable partout dans le workflow."},
+      {t:"La table intermédiaire 'Approved Companies'",b:"Une fois les lookups faits, on n'enrichit PAS directement depuis la table de sourcing. On envoie d'abord les entreprises approuvées dans une table intermédiaire via Send Data to Table → Run condition : Good Fit is 'Approved'. C'est depuis CETTE table qu'on fait Find People, l'enrichissement email et les agents IA. Avantage : si une erreur se glisse en amont, elle ne pollue pas tout le workflow aval."}
     ],
-    qq:["Comment normaliser un domaine ?","Lookup Single Row ?","TAM par client ?"]
+    qq:["Comment normaliser un domaine dans Clay ?","Différence entre TAM Company et TAM People ?","Comment exporter la Blocklist depuis HubSpot ?"]
   },
   {
     id:4, num:"04", name:"Sourcing & enrichissement", tag:"Data Ops", dur:"2h30", color:"#D97706", colorLight:"#FFFBEB",
