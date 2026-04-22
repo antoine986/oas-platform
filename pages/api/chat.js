@@ -15,12 +15,22 @@ export default async function handler(req, res) {
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({
+        ...req.body,
+        model: 'claude-3-5-sonnet-20241022'
+      })
     });
 
     const data = await response.json();
-    res.status(response.status).json(data);
+
+    if (!response.ok) {
+      console.error('Anthropic API error:', data);
+      return res.status(response.status).json(data);
+    }
+
+    res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur. Réessaie dans un instant.' });
+    console.error('Handler error:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
   }
 }
