@@ -418,6 +418,13 @@ export default function OASPlatform() {
   const endRef = useRef(null);
   const taRef = useRef(null);
 
+  // Copywriting Agent
+  const [cpForm, setCpForm] = useState({activite:'',persona:'',signal:'recrutement',canal:'multicanal',enjeu:'',ton:'conversationnel'});
+  const [cpResult, setCpResult] = useState(null);
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpErr, setCpErr] = useState('');
+  const [cpCopied, setCpCopied] = useState('');
+
   useEffect(() => { endRef.current?.scrollIntoView({behavior:'smooth'}); }, [msgs, typing]);
 
   const SYSTEM = `Tu es le tuteur expert de la formation "Outbound Automation System" créée par Antoine Beliaeff (Rerow). Tu formes des PME B2B françaises — SaaS, cabinets d'experts, équipes commerciales 1-5 personnes.
@@ -518,6 +525,63 @@ FIL ROUGE (cas pratique de référence) : Syncflow, SaaS RH & onboarding, 2 comm
   };
 
   const logout = () => { setView('login'); setUser(null); setProg({}); setEmail(''); setCode(''); };
+
+  const generateCopy = async () => {
+    if(!cpForm.activite||!cpForm.persona||!cpForm.enjeu){ setCpErr('Remplis tous les champs obligatoires.'); return; }
+    setCpLoading(true); setCpErr(''); setCpResult(null);
+    const signalLabel = {recrutement:'recrutement actif sur un poste cible',levee:'levée de fonds récente',expansion:'expansion géographique ou ouverture de nouveaux sites',poste:'nouveau décideur en poste depuis moins de 6 mois',aucun:'aucun signal disponible — utiliser un enjeu sectoriel universel'}[cpForm.signal];
+    const prompt = `Tu es un expert en copywriting outbound B2B. Génère une séquence de prospection complète.
+
+CONTEXTE CLIENT :
+- Activité : ${cpForm.activite}
+- Persona ciblé : ${cpForm.persona}
+- Signal disponible : ${signalLabel}
+- Canal : ${cpForm.canal}
+- Enjeu principal du persona : ${cpForm.enjeu}
+- Ton : ${cpForm.ton}
+
+RÈGLES ABSOLUES :
+- Jamais de vente directe au premier contact
+- Jamais de chiffres inventés — si tu mentionnes des données, elles doivent être plausibles
+- Jamais de flatterie ("impressionnant", "bravo", "félicitations")
+- Structure : Observation → Supposition prudente ("j'imagine que...", "je me demandais si...") → Question ouverte
+- LinkedIn : 2-3 phrases max, jamais de message dans la demande de connexion
+- Email : 5-6 lignes max, objet court (5 mots max), pas de signature dans le corps
+- Ton conversationnel et humain — pas corporate
+
+RETOURNE UNIQUEMENT ce JSON valide, sans markdown, sans backticks :
+{
+  "linkedin": {
+    "message_j0": "...",
+    "followup_j14": "..."
+  },
+  "email": {
+    "j0": {"objet": "...", "corps": "..."},
+    "j3": {"objet": "...", "corps": "..."},
+    "j7": {"objet": "...", "corps": "..."}
+  },
+  "règles_appliquées": ["...", "...", "..."]
+}`;
+    try {
+      const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,
+          system:'Tu es un expert copywriter outbound B2B. Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, sans texte autour.',
+          messages:[{role:'user',content:prompt}]
+        })
+      });
+      const d = await r.json();
+      const raw = d.content?.[0]?.text||'';
+      const clean = raw.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+      setCpResult(parsed);
+    } catch(e){ setCpErr('Erreur de génération. Réessaie.'); }
+    setCpLoading(false);
+  };
+
+  const copyText = (key, text) => {
+    navigator.clipboard?.writeText(text).catch(()=>{});
+    setCpCopied(key); setTimeout(()=>setCpCopied(''),2500);
+  };
 
   const doneCount = MODULES.filter(m=>prog[m.id]?.done).length;
   const pct = Math.round(doneCount/MODULES.length*100);
@@ -641,6 +705,41 @@ FIL ROUGE (cas pratique de référence) : Syncflow, SaaS RH & onboarding, 2 comm
                 </div>
               );
             })}
+          </div>
+
+          {/* OUTILS */}
+          <div style={{marginTop:32}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+              <div style={{fontSize:16,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Outils</div>
+              <span style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:20,background:'#FEF3C7',color:'#92400E'}}>Applique ce que tu as appris</span>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+              <div onClick={()=>setView('copywriting')}
+                style={{background:'white',borderRadius:14,border:'1px solid #E5E7EB',cursor:'pointer',padding:20,transition:'all .15s'}}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';}}
+                onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:'#FDF2F8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>✍️</div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>Copywriting Agent</div>
+                    <div style={{fontSize:12,color:'#9CA3AF'}}>Module 05 — Messaging</div>
+                  </div>
+                </div>
+                <div style={{fontSize:13,color:'#6B7280',lineHeight:1.6}}>Génère une séquence outbound complète — LinkedIn + Email — basée sur ton ICP, ton signal et l'enjeu de ton persona.</div>
+                <div style={{marginTop:12,fontSize:12,color:'#BE185D',fontWeight:600}}>Lancer l'outil →</div>
+              </div>
+              <div style={{background:'white',borderRadius:14,border:'1px dashed #D1D5DB',padding:20,opacity:.6}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:'#F9FAFB',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🔍</div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>Scraping Agent</div>
+                    <div style={{fontSize:12,color:'#9CA3AF'}}>Module 02 — Ciblage</div>
+                  </div>
+                </div>
+                <div style={{fontSize:13,color:'#6B7280',lineHeight:1.6}}>Décris ton ICP et génère une URL Apollo.io prête à importer dans Clay avec le workflow de cleaning adapté.</div>
+                <div style={{marginTop:12,fontSize:12,color:'#9CA3AF',fontWeight:600}}>Bientôt disponible</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -847,6 +946,206 @@ FIL ROUGE (cas pratique de référence) : Syncflow, SaaS RH & onboarding, 2 comm
       <style>{`@keyframes oasBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}`}</style>
     </>
   );
+
+
+  /* COPYWRITING AGENT */
+  if(view==='copywriting') {
+    const SIGNALS = [
+      {v:'recrutement', l:'Recrutement actif', e:'Offre d'emploi sur un poste cible détectée'},
+      {v:'levee',       l:'Levée de fonds',    e:'Financement récent — budget disponible'},
+      {v:'expansion',   l:'Expansion',          e:'Ouverture de nouveaux sites ou marchés'},
+      {v:'poste',       l:'Nouveau décideur',   e:'Changement de poste récent (< 6 mois)'},
+      {v:'aucun',       l:'Aucun signal',        e:'Enjeu sectoriel universel utilisé'},
+    ];
+    const CANAUX = [{v:'linkedin',l:'LinkedIn seulement'},{v:'email',l:'Email seulement'},{v:'multicanal',l:'LinkedIn + Email'}];
+    const TONS = [{v:'conversationnel',l:'Conversationnel'},{v:'professionnel',l:'Professionnel'},{v:'direct',l:'Direct & concis'}];
+
+    const inp2 = (val, key, ph, multiline) => {
+      const s = {width:'100%',border:'1.5px solid #E5E7EB',borderRadius:9,padding:'10px 13px',fontSize:13,outline:'none',boxSizing:'border-box',color:'#111827',background:'#FAFAFA',fontFamily:'inherit',resize:'none',transition:'border-color .15s'};
+      return multiline
+        ? <textarea value={val} onChange={e=>setCpForm(f=>({...f,[key]:e.target.value}))} placeholder={ph} rows={3} style={{...s,minHeight:80}} onFocus={e=>e.target.style.borderColor=T} onBlur={e=>e.target.style.borderColor='#E5E7EB'}/>
+        : <input value={val} onChange={e=>setCpForm(f=>({...f,[key]:e.target.value}))} placeholder={ph} style={s} onFocus={e=>e.target.style.borderColor=T} onBlur={e=>e.target.style.borderColor='#E5E7EB'}/>;
+    };
+
+    const sel = (key, options) => (
+      <select value={cpForm[key]} onChange={e=>setCpForm(f=>({...f,[key]:e.target.value}))}
+        style={{width:'100%',border:'1.5px solid #E5E7EB',borderRadius:9,padding:'10px 13px',fontSize:13,outline:'none',boxSizing:'border-box',color:'#111827',background:'#FAFAFA',appearance:'none',cursor:'pointer'}}>
+        {options.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+      </select>
+    );
+
+    const MsgCard = ({title, tag, content, copyKey, color, colorLight}) => (
+      <div style={{background:'white',border:`1px solid #E5E7EB`,borderLeft:`3px solid ${color}`,borderRadius:10,padding:'14px 16px',marginBottom:10}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:13,fontWeight:700,color:'#111827'}}>{title}</span>
+            <span style={{fontSize:10,fontWeight:600,padding:'2px 8px',borderRadius:12,background:colorLight,color:color}}>{tag}</span>
+          </div>
+          <button onClick={()=>copyText(copyKey, content)}
+            style={{fontSize:11,padding:'4px 10px',borderRadius:6,border:`1px solid ${cpCopied===copyKey?color:'#E5E7EB'}`,background:cpCopied===copyKey?colorLight:'white',color:cpCopied===copyKey?color:'#6B7280',cursor:'pointer',fontWeight:500,transition:'all .15s'}}>
+            {cpCopied===copyKey?'✓ Copié !':'Copier'}
+          </button>
+        </div>
+        <div style={{fontSize:13,color:'#374151',lineHeight:1.75,whiteSpace:'pre-wrap',background:'#F9FAFB',borderRadius:7,padding:'10px 12px'}}>{content}</div>
+      </div>
+    );
+
+    return (
+      <>
+        <Head><title>OAS — Copywriting Agent</title></Head>
+        <div style={{minHeight:'100vh',background:'#F4F6F5'}}>
+          <div style={{background:'white',borderBottom:'1px solid #E5E7EB',padding:'12px 28px',display:'flex',alignItems:'center',gap:10,position:'sticky',top:0,zIndex:10}}>
+            <button onClick={()=>{setView('dash');setCpResult(null);setCpErr('');}} style={{fontSize:13,color:'#6B7280',background:'none',border:'1px solid #E5E7EB',padding:'5px 12px',borderRadius:7,cursor:'pointer',fontWeight:500}}>← Dashboard</button>
+            <div style={{height:16,width:1,background:'#E5E7EB'}}/>
+            <span style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:20,background:'#FDF2F8',color:'#BE185D'}}>Messaging</span>
+            <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>✍️ Copywriting Agent</span>
+            <span style={{fontSize:12,color:'#9CA3AF',marginLeft:2}}>— Module 05 appliqué</span>
+          </div>
+
+          <div style={{maxWidth:1100,margin:'0 auto',padding:'28px 24px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,alignItems:'start'}}>
+            {/* FORM */}
+            <div>
+              <div style={{background:'white',borderRadius:14,border:'1px solid #E5E7EB',padding:24,boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#111827',marginBottom:4}}>Configuration</div>
+                <div style={{fontSize:13,color:'#9CA3AF',marginBottom:20}}>Remplis le contexte — le tuteur génère la séquence.</div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Activité de ton client <span style={{color:'#DC2626'}}>*</span></label>
+                  {inp2(cpForm.activite,'activite','Ex : SaaS de gestion RH & onboarding pour PME')}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Persona ciblé <span style={{color:'#DC2626'}}>*</span></label>
+                  {inp2(cpForm.persona,'persona','Ex : DRH & HRBP dans des PME 100-500 salariés, France')}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                  <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Signal disponible</label>
+                  {sel('signal', SIGNALS)}
+                  <div style={{fontSize:11,color:'#9CA3AF',marginTop:4}}>{SIGNALS.find(s=>s.v===cpForm.signal)?.e}</div>
+                </div>
+
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+                  <div>
+                    <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Canal</label>
+                    {sel('canal', CANAUX)}
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Ton</label>
+                    {sel('ton', TONS)}
+                  </div>
+                </div>
+
+                <div style={{marginBottom:20}}>
+                  <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Enjeu principal du persona <span style={{color:'#DC2626'}}>*</span></label>
+                  {inp2(cpForm.enjeu,'enjeu','Ex : mobiliser rapidement les bons profils lors des pics d'activité sans surcharger les équipes',true)}
+                </div>
+
+                {cpErr && <div style={{fontSize:13,color:'#DC2626',background:'#FEF2F2',padding:'9px 13px',borderRadius:8,marginBottom:16,fontWeight:500}}>{cpErr}</div>}
+
+                <button onClick={generateCopy} disabled={cpLoading}
+                  style={{width:'100%',padding:'13px',borderRadius:10,background:cpLoading?'#9CA3AF':T,color:'white',border:'none',cursor:cpLoading?'not-allowed':'pointer',fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                  {cpLoading
+                    ? <><div style={{width:16,height:16,borderRadius:'50%',border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',animation:'oasSpin 0.8s linear infinite'}}/> Génération en cours...</>
+                    : '✨ Générer la séquence'}
+                </button>
+              </div>
+
+              {/* Rappel Module 05 */}
+              <div style={{background:TL,borderRadius:10,border:`1px solid #A7F3D0`,padding:'12px 16px',marginTop:14}}>
+                <div style={{fontSize:12,fontWeight:700,color:TD,marginBottom:6}}>📖 Rappel Module 05</div>
+                <div style={{fontSize:12,color:'#065F46',lineHeight:1.7}}>
+                  <div>• Observation → Supposition → Question ouverte</div>
+                  <div>• Jamais de message dans la demande de connexion LinkedIn</div>
+                  <div>• Email : sous-domaines dédiés + warm-up avant d'envoyer</div>
+                  <div>• Tester le ton avec le client avant de lancer la séquence</div>
+                </div>
+              </div>
+            </div>
+
+            {/* RESULTS */}
+            <div>
+              {!cpResult && !cpLoading && (
+                <div style={{background:'white',borderRadius:14,border:'1px dashed #D1D5DB',padding:40,textAlign:'center'}}>
+                  <div style={{fontSize:32,marginBottom:12}}>✍️</div>
+                  <div style={{fontSize:14,fontWeight:600,color:'#374151',marginBottom:6}}>Ta séquence apparaîtra ici</div>
+                  <div style={{fontSize:13,color:'#9CA3AF',lineHeight:1.6}}>Remplis le formulaire et clique sur "Générer". La séquence respecte les règles du Module 05.</div>
+                </div>
+              )}
+
+              {cpLoading && (
+                <div style={{background:'white',borderRadius:14,border:'1px solid #E5E7EB',padding:40,textAlign:'center'}}>
+                  <div style={{width:32,height:32,borderRadius:'50%',border:'3px solid #E5E7EB',borderTopColor:T,animation:'oasSpin 0.8s linear infinite',margin:'0 auto 16px'}}/>
+                  <div style={{fontSize:14,color:'#6B7280'}}>Génération de ta séquence...</div>
+                </div>
+              )}
+
+              {cpResult && (
+                <div>
+                  {/* LinkedIn */}
+                  {(cpForm.canal==='linkedin'||cpForm.canal==='multicanal') && cpResult.linkedin && (
+                    <div style={{marginBottom:18}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:10,display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:16}}>💼</span> LinkedIn
+                        <span style={{fontSize:10,fontWeight:500,color:'#9CA3AF',textTransform:'none',letterSpacing:0}}>Connexion sans message → attend l'acceptation → envoie J0</span>
+                      </div>
+                      <MsgCard title="Message J0" tag="Après acceptation" content={cpResult.linkedin.message_j0} copyKey="li_j0" color="#185FA5" colorLight="#EFF6FF"/>
+                      <MsgCard title="Follow-up J14" tag="Si pas de réponse" content={cpResult.linkedin.followup_j14} copyKey="li_j14" color="#185FA5" colorLight="#EFF6FF"/>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  {(cpForm.canal==='email'||cpForm.canal==='multicanal') && cpResult.email && (
+                    <div style={{marginBottom:18}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:10,display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:16}}>📧</span> Email
+                        <span style={{fontSize:10,fontWeight:500,color:'#9CA3AF',textTransform:'none',letterSpacing:0}}>Sous-domaine dédié · Warm-up activé</span>
+                      </div>
+                      {[
+                        {key:'j0', label:'Email J0', tag:'Premier contact'},
+                        {key:'j3', label:'Follow-up J3', tag:'Relance'},
+                        {key:'j7', label:'Follow-up J7', tag:'Dernier essai'},
+                      ].map(e=>cpResult.email[e.key] && (
+                        <div key={e.key}>
+                          <MsgCard
+                            title={e.label} tag={e.tag}
+                            content={`Objet : ${cpResult.email[e.key].objet}
+
+${cpResult.email[e.key].corps}`}
+                            copyKey={`em_${e.key}`} color="#BE185D" colorLight="#FDF2F8"/>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Rules applied */}
+                  {cpResult.règles_appliquées && (
+                    <div style={{background:'#FFFBEB',border:'1px solid #FDE68A',borderRadius:10,padding:'12px 16px'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:'#92400E',marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}}>💡 Règles appliquées</div>
+                      {cpResult.règles_appliquées.map((r,i)=>(
+                        <div key={i} style={{fontSize:12,color:'#92400E',marginBottom:4,display:'flex',gap:6}}>
+                          <span>✓</span><span style={{lineHeight:1.5}}>{r}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button onClick={()=>{setCpResult(null);setCpErr('');}}
+                    style={{width:'100%',padding:'10px',borderRadius:9,background:'white',color:'#6B7280',border:'1px solid #E5E7EB',cursor:'pointer',fontSize:13,fontWeight:500,marginTop:14}}>
+                    ← Modifier et régénérer
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @keyframes oasSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+          @keyframes oasBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+        `}</style>
+      </>
+    );
+  }
 
   return null;
 }
