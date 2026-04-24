@@ -355,6 +355,49 @@ const MODULES = [
    qq:["Fréquence pour le schedule ?","Quand activer l'auto-update ?","Comment monitorer le workflow ?"]},
 ];
 
+/* ─── Markdown renderer ─── */
+const renderMsg = (text) => {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    if (!line.trim()) return <div key={i} style={{height:6}}/>;
+
+    // Parse inline bold (**text**)
+    const parseBold = (str) => {
+      const parts = str.split(/\*\*(.*?)\*\*/g);
+      return parts.map((part, j) =>
+        j % 2 === 1
+          ? <strong key={j} style={{fontWeight:700, color:'inherit'}}>{part}</strong>
+          : part
+      );
+    };
+
+    // Bullet point
+    if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
+      const content = line.trim().slice(2);
+      return (
+        <div key={i} style={{display:'flex',gap:7,alignItems:'flex-start',marginBottom:3}}>
+          <span style={{color:TM,fontWeight:700,fontSize:14,lineHeight:'1.6',flexShrink:0}}>·</span>
+          <span style={{lineHeight:1.65}}>{parseBold(content)}</span>
+        </div>
+      );
+    }
+
+    // Numbered list
+    const numMatch = line.trim().match(/^(\d+)\.\s+(.*)/);
+    if (numMatch) {
+      return (
+        <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',marginBottom:4}}>
+          <span style={{background:TL,color:T,fontSize:10,fontWeight:700,borderRadius:5,padding:'2px 6px',flexShrink:0,marginTop:2}}>{numMatch[1]}</span>
+          <span style={{lineHeight:1.65}}>{parseBold(numMatch[2])}</span>
+        </div>
+      );
+    }
+
+    // Regular line
+    return <div key={i} style={{lineHeight:1.7,marginBottom:2}}>{parseBold(line)}</div>;
+  });
+};
+
 const sg = k => { try { const v = typeof window!=='undefined'?localStorage.getItem(k):null; return v?JSON.parse(v):null; } catch(e){ return null; } };
 const ss = (k,v) => { try { if(typeof window!=='undefined') localStorage.setItem(k,JSON.stringify(v)); } catch(e){} };
 
@@ -745,7 +788,7 @@ FIL ROUGE (cas pratique de référence) : Syncflow, SaaS RH & onboarding, 2 comm
           </div>
 
           {/* TUTOR */}
-          <div style={{width:320,minWidth:320,borderLeft:'1px solid #E5E7EB',display:'flex',flexDirection:'column',background:'white',flexShrink:0}}>
+          <div style={{width:420,minWidth:420,borderLeft:'1px solid #E5E7EB',display:'flex',flexDirection:'column',background:'white',flexShrink:0}}>
             <div style={{padding:'13px 16px',borderBottom:'1px solid #F3F4F6',background:'#FAFDF8',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
               <div style={{width:32,height:32,borderRadius:'50%',background:TL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:T}}>OA</div>
               <div>
@@ -762,8 +805,8 @@ FIL ROUGE (cas pratique de référence) : Syncflow, SaaS RH & onboarding, 2 comm
               {msgs.map((m,i)=>(
                 <div key={i} style={{display:'flex',flexDirection:'column',alignItems:m.role==='user'?'flex-end':'flex-start'}}>
                   <div style={{fontSize:10,color:'#9CA3AF',marginBottom:3,fontWeight:600}}>{m.role==='user'?'Toi':'Tuteur OAS'}</div>
-                  <div style={{maxWidth:'92%',padding:'9px 12px',borderRadius:11,fontSize:12,lineHeight:1.65,background:m.role==='user'?T:'#F3F4F6',color:m.role==='user'?'white':'#111827',borderBottomLeftRadius:m.role==='ai'?3:11,borderBottomRightRadius:m.role==='user'?3:11}}>
-                    {m.content}
+                  <div style={{maxWidth:'96%',padding:'11px 14px',borderRadius:12,fontSize:13,lineHeight:1.7,background:m.role==='user'?T:'#F3F4F6',color:m.role==='user'?'white':'#111827',borderBottomLeftRadius:m.role==='ai'?3:11,borderBottomRightRadius:m.role==='user'?3:11}}>
+                    {m.role==="ai" ? renderMsg(m.content) : m.content}
                   </div>
                 </div>
               ))}
